@@ -3,6 +3,7 @@ package transport
 import (
 	"context"
 	"net/http"
+	"strings"
 )
 
 type Trasport interface {
@@ -52,4 +53,19 @@ func (t *transport) Server(endpoint Endpoint,
 			return
 		}
 
+}
+
+func Clean(url string) ([]string, int) {
+	
+		if url[0] != '/' {
+			url = "/" + url
+		}
+
+		if url[len(url)-1] != '/' {
+			url =  url + "/"
+		}
+
+		parts := strings.Split(url, "/")
+
+		return parts, len(parts)
 }
