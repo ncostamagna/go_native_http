@@ -22,54 +22,48 @@ func UserServer(ctx context.Context, endpoint user.Endpoints) func(w http.Respon
 		url := r.URL.Path
 		log.Println(r.Method, ": ", url)
 		path, pathSize := transport.Clean(url)
-		
-		
-		if pathSize < 3 || pathSize > 4{
-			InvalidMethod(w)
-			return
-		}
 
 		params := make(map[string] string)
 		
 		if pathSize == 4 && path[2] != ""{
 			params["userID"] = path[2]
 		}
-		ctx = context.WithValue(ctx, "params", params)
 
-		tran := transport.New(w, r, ctx)
+		tran := transport.New(w, r, context.WithValue(ctx, "params", params))
+
+		var end transport.Endpoint
+		var deco func(ctx context.Context, r *http.Request) (interface{}, error)
+
 		switch r.Method {
 		case http.MethodGet:
 			switch pathSize {
 			case 3:
-				tran.Server(
-					transport.Endpoint(endpoint.GetAll),
-					decodeGetAllUser,
-					encodeResponse,
-					encodeError)
-				return
+				end = transport.Endpoint(endpoint.GetAll)
+				deco = decodeGetAllUser
 			case 4:
-				tran.Server(
-					nil,
-					decoGetUser,
-					encodeResponse,
-					encodeError)
-				return 
+				end = transport.Endpoint(endpoint.GetAll)
+				deco = decoGetUser
 			}
 			
 		case http.MethodPost:
 			switch pathSize {
 			case 3:
-				tran.Server(
-					transport.Endpoint(endpoint.Create),
-					decodeCreateUser,
-					encodeResponse,
-					encodeError)
-					return
+				end = transport.Endpoint(endpoint.Create)
+				deco = decodeCreateUser
 			}
 			
 		}
 
-		InvalidMethod(w)
+		if end != nil && deco != nil {
+			tran.Server(
+				end,
+				deco,
+				encodeResponse,
+				encodeError)
+		}else{
+			InvalidMethod(w)
+		}
+
 	}
 
 }
