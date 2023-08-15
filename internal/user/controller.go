@@ -10,6 +10,8 @@ type (
 	Endpoints struct {
 		Create Controller
 		GetAll Controller
+		Get Controller
+		Update Controller
 	}
 
 	CreateReq struct {
@@ -17,12 +19,25 @@ type (
 		LastName  string `json:"last_name"`
 		Email     string `json:"email"`
 	}
+
+	GetReq struct {
+		UserID uint64
+	}
+
+	UpdateReq struct {
+		UserID uint64
+		FirstName *string `json:"first_name"`
+		LastName  *string `json:"last_name"`
+		Email     *string `json:"email"`
+	}
 )
 
 func MakeEndpoints(s Service) Endpoints {
 	return Endpoints{
 		Create: makeCreateEndpoint(s),
 		GetAll: makeGetAllEndpoint(s),
+		Get: makeGetEndpoint(s),
+		Update: makeUpdateEndpoint(s),
 	}
 }
 
@@ -51,5 +66,30 @@ func makeGetAllEndpoint(s Service) Controller {
 		}
 
 		return users, nil
+	}
+}
+
+func makeGetEndpoint(s Service) Controller {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GetReq)
+		
+		user, err := s.Get(ctx, req.UserID)
+		if err != nil {
+			return nil, err
+		}
+		
+		return user, nil
+	}
+}
+
+func makeUpdateEndpoint(s Service) Controller {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+
+		req := request.(UpdateReq)
+
+		if err := s.Update(ctx, req.UserID, req.FirstName, req.LastName, req.Email); err != nil {
+			return nil, err
+		}
+		return nil, nil
 	}
 }
