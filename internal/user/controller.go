@@ -46,6 +46,14 @@ func makeCreateEndpoint(s Service) Controller {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateReq)
 
+		if req.FirstName == "" {
+			return nil, ErrFirstNameRequired
+		}
+
+		if req.LastName == "" {
+			return nil, ErrLastNameRequired
+		}
+
 		user, err := s.Create(ctx, req.FirstName, req.LastName, req.Email)
 		if err != nil {
 
@@ -86,6 +94,14 @@ func makeUpdateEndpoint(s Service) Controller {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 
 		req := request.(UpdateReq)
+
+		if req.FirstName != nil && *req.FirstName == "" {
+			return nil, ErrFirstNameRequired
+		}
+
+		if req.LastName != nil && *req.LastName == "" {
+			return nil, ErrLastNameRequired
+		}
 
 		if err := s.Update(ctx, req.UserID, req.FirstName, req.LastName, req.Email); err != nil {
 			return nil, err
