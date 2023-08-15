@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/ncostamagna/go_native_http/internal/user"
+	"github.com/ncostamagna/go_native_http/pkg/response"
 	"github.com/ncostamagna/go_native_http/pkg/transport"
 )
 
@@ -124,26 +125,19 @@ func decodeGetAllUser(ctx context.Context, r *http.Request) (interface{}, error)
 
 func encodeResponse(ctx context.Context, w http.ResponseWriter, resp interface{}) error {
 	
-	data, err := json.Marshal(resp)
-	if err != nil {
-		return err
-	}
-
-	status := http.StatusOK
+	r := resp.(response.Response)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(status)
-	fmt.Fprintf(w, `{"status":%d, "data":%s}`, status, data)
-
-	return nil
+	w.WriteHeader(r.StatusCode())
+	return json.NewEncoder(w).Encode(resp)
+	
 }
 
 func encodeError(_ context.Context, err error, w http.ResponseWriter) {
-
-	status := http.StatusInternalServerError
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(status)
-	fmt.Fprintf(w, `{"status":%d, "message":"%s"}`, status, err.Error())
+	resp := err.(response.Response)
 
+	w.WriteHeader(resp.StatusCode())
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
 func InvalidMethod(w http.ResponseWriter) {
