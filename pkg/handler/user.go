@@ -79,7 +79,7 @@ func decodeCreateUser(ctx context.Context, r *http.Request) (interface{}, error)
 
 	var req user.CreateReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return nil, fmt.Errorf("invalid request format: '%v'", err.Error())
+		return nil, response.BadRequest(fmt.Sprintf("invalid request format: '%v'", err.Error()))
 	}
 
 	return req, nil
@@ -91,7 +91,7 @@ func decoGetUser(ctx context.Context, r *http.Request) (interface{}, error) {
 
 	userID, err := strconv.ParseUint(params["userID"], 10, 64)
 	if err != nil {
-		return nil, err
+		return nil, response.BadRequest(err.Error())
 	}
 
 	return user.GetReq{
