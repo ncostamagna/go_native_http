@@ -3,7 +3,9 @@ package user
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
+	"strings"
 
 	"github.com/ncostamagna/go_native_http/internal/domain"
 )
@@ -37,8 +39,8 @@ func NewRepo(db *sql.DB, l *log.Logger) Repository {
 
 func (r *repo) Create(ctx context.Context, user *domain.User) error {
 
-	sql := "INSERT INTO users(first_name, last_name, email) VALUES(?,?,?)"
-	res, err := r.db.Exec(sql,user.FirstName, user.LastName, user.Email)
+	sqlQ := "INSERT INTO users(first_name, last_name, email) VALUES(?,?,?)"
+	res, err := r.db.Exec(sqlQ,user.FirstName, user.LastName, user.Email)
 if err != nil {
 	r.log.Println(err.Error())
 	return  err
@@ -56,9 +58,8 @@ user.ID = uint64(id)
 func (r *repo) GetAll(ctx context.Context) ([]domain.User, error) {
 
 	var users []domain.User
-	sql := "select id, first_name, last_name, email from users"
-	r.log.Println(sql)
-	rows, err := r.db.Query(sql)
+	sqlQ := "select id, first_name, last_name, email from users"
+	rows, err := r.db.Query(sqlQ)
 	if err != nil {
 		r.log.Println(err.Error())
 		return nil, err
@@ -78,35 +79,60 @@ func (r *repo) GetAll(ctx context.Context) ([]domain.User, error) {
 }
 
 func (r *repo) Get(ctx context.Context, userID uint64) (*domain.User, error) {
-/*
-	index := slices.IndexFunc(r.db.Users, func(v domain.User) bool {
-		return v.ID == userID
-	})
-
-	if index < 0 {
-		return nil, ErrNotFound{userID}
+	sqlQ := "select id, first_name, last_name, email from users where id = ?"
+	var u domain.User
+	if err := r.db.QueryRow(sqlQ, userID).Scan(&u.ID, &u.FirstName, &u.LastName, &u.Email); err != nil {
+		r.log.Println(err.Error())
+		if err == sql.ErrNoRows {
+			return nil, ErrNotFound{userID}
+		}
+		return nil, err
 	}
-	*/
-	return nil, nil
+	r.log.Println("get user with id: ", u.ID)
+	return &u, nil
 }
 
 func (r *repo) Update(ctx context.Context, userID uint64, firstName, lastName, email *string) error {
-	user, err := r.Get(ctx, userID)
-	if err != nil {
-		return err
-	}
-
+	var fields []string
+	var values []interface{}
+	
 	if firstName != nil {
-		user.FirstName = *firstName
+		fields = append(fields, "first_name=?")
+		values = append(values, *firstName)
 	}
 
 	if lastName != nil {
-		user.LastName = *lastName
+		fields = append(fields, "last_name=?")
+		values = append(values, *lastName)
 	}
 
 	if email != nil {
-		user.Email = *email
+		fields = append(fields, "email=?")
+		values = append(values, *email)
 	}
 
+	if len(fields) == 0 {
+		r.log.Println(ErrThereArentFields)
+		return ErrThereArentFields
+	}
+	values = append(values, userID)
+	sqlQ := fmt.Sprintf("UPDATE users SET %s WHERE id=?", strings.Join(fields, ","))
+	res, err := r.db.Exec(sqlQ, values...)
+	if err != nil {
+		r.log.Println(err.Error())
+		return err
+	}
+
+	row, err := res.RowsAffected()
+	if err != nil {
+		r.log.Println(err.Error())
+		return err
+	}
+	if row == 0 {
+		r.log.Println(ErrNotFound{userID})
+		return ErrNotFound{userID}
+	}
+
+	r.log.Println("user updated id: ", userID)
 	return nil
 }

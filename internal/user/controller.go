@@ -114,6 +114,9 @@ func makeUpdateEndpoint(s Service) Controller {
 
 		if err := s.Update(ctx, req.UserID, req.FirstName, req.LastName, req.Email); err != nil {
 
+			if err == ErrThereArentFields {
+				return nil, response.BadRequest(err.Error())
+			}
 			if errors.As(err, &ErrNotFound{}) {
 				return nil, response.NotFound(err.Error())
 			}
