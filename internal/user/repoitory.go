@@ -40,17 +40,17 @@ func NewRepo(db *sql.DB, l *log.Logger) Repository {
 func (r *repo) Create(ctx context.Context, user *domain.User) error {
 
 	sqlQ := "INSERT INTO users(first_name, last_name, email) VALUES(?,?,?)"
-	res, err := r.db.Exec(sqlQ,user.FirstName, user.LastName, user.Email)
-if err != nil {
-	r.log.Println(err.Error())
-	return  err
-}
-id, err := res.LastInsertId()
-if err != nil {
-	r.log.Println(err.Error())
-	return  err
-}
-user.ID = uint64(id)
+	res, err := r.db.Exec(sqlQ, user.FirstName, user.LastName, user.Email)
+	if err != nil {
+		r.log.Println(err.Error())
+		return err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		r.log.Println(err.Error())
+		return err
+	}
+	user.ID = uint64(id)
 	r.log.Println("user created with id: ", id)
 	return nil
 }
@@ -95,7 +95,7 @@ func (r *repo) Get(ctx context.Context, userID uint64) (*domain.User, error) {
 func (r *repo) Update(ctx context.Context, userID uint64, firstName, lastName, email *string) error {
 	var fields []string
 	var values []interface{}
-	
+
 	if firstName != nil {
 		fields = append(fields, "first_name=?")
 		values = append(values, *firstName)

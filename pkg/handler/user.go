@@ -14,7 +14,7 @@ import (
 )
 
 func NewUserHTTPServer(ctx context.Context, router *http.ServeMux, endpoint user.Endpoints) {
-	
+
 	router.HandleFunc("/users/", UserServer(ctx, endpoint))
 
 }
@@ -25,9 +25,9 @@ func UserServer(ctx context.Context, endpoint user.Endpoints) func(w http.Respon
 		log.Println(r.Method, ": ", url)
 		path, pathSize := transport.Clean(url)
 
-		params := make(map[string] string)
-		
-		if pathSize == 4 && path[2] != ""{
+		params := make(map[string]string)
+
+		if pathSize == 4 && path[2] != "" {
 			params["userID"] = path[2]
 		}
 
@@ -46,7 +46,7 @@ func UserServer(ctx context.Context, endpoint user.Endpoints) func(w http.Respon
 				end = transport.Endpoint(endpoint.Get)
 				deco = decoGetUser
 			}
-			
+
 		case http.MethodPost:
 			switch pathSize {
 			case 3:
@@ -67,7 +67,7 @@ func UserServer(ctx context.Context, endpoint user.Endpoints) func(w http.Respon
 				deco,
 				encodeResponse,
 				encodeError)
-		}else{
+		} else {
 			InvalidMethod(w)
 		}
 
@@ -87,7 +87,7 @@ func decodeCreateUser(ctx context.Context, r *http.Request) (interface{}, error)
 
 func decoGetUser(ctx context.Context, r *http.Request) (interface{}, error) {
 
-	params := ctx.Value("params").(map[string] string)
+	params := ctx.Value("params").(map[string]string)
 
 	userID, err := strconv.ParseUint(params["userID"], 10, 64)
 	if err != nil {
@@ -99,7 +99,6 @@ func decoGetUser(ctx context.Context, r *http.Request) (interface{}, error) {
 	}, nil
 }
 
-
 func decoUpdateUser(ctx context.Context, r *http.Request) (interface{}, error) {
 
 	var req user.UpdateReq
@@ -107,7 +106,7 @@ func decoUpdateUser(ctx context.Context, r *http.Request) (interface{}, error) {
 		return nil, fmt.Errorf("invalid request format: '%v'", err.Error())
 	}
 
-	params := ctx.Value("params").(map[string] string)
+	params := ctx.Value("params").(map[string]string)
 
 	userID, err := strconv.ParseUint(params["userID"], 10, 64)
 	if err != nil {
@@ -115,7 +114,7 @@ func decoUpdateUser(ctx context.Context, r *http.Request) (interface{}, error) {
 	}
 
 	req.UserID = userID
-	
+
 	return req, nil
 }
 
@@ -124,12 +123,12 @@ func decodeGetAllUser(ctx context.Context, r *http.Request) (interface{}, error)
 }
 
 func encodeResponse(ctx context.Context, w http.ResponseWriter, resp interface{}) error {
-	
+
 	r := resp.(response.Response)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(r.StatusCode())
 	return json.NewEncoder(w).Encode(resp)
-	
+
 }
 
 func encodeError(_ context.Context, err error, w http.ResponseWriter) {

@@ -13,7 +13,7 @@ type (
 	Endpoints struct {
 		Create Controller
 		GetAll Controller
-		Get Controller
+		Get    Controller
 		Update Controller
 	}
 
@@ -28,7 +28,7 @@ type (
 	}
 
 	UpdateReq struct {
-		UserID uint64
+		UserID    uint64
 		FirstName *string `json:"first_name"`
 		LastName  *string `json:"last_name"`
 		Email     *string `json:"email"`
@@ -39,11 +39,10 @@ func MakeEndpoints(s Service) Endpoints {
 	return Endpoints{
 		Create: makeCreateEndpoint(s),
 		GetAll: makeGetAllEndpoint(s),
-		Get: makeGetEndpoint(s),
+		Get:    makeGetEndpoint(s),
 		Update: makeUpdateEndpoint(s),
 	}
 }
-
 
 func makeCreateEndpoint(s Service) Controller {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -51,7 +50,7 @@ func makeCreateEndpoint(s Service) Controller {
 
 		if req.FirstName == "" {
 			return nil, response.BadRequest(ErrFirstNameRequired.Error())
-			
+
 		}
 
 		if req.LastName == "" {
@@ -84,7 +83,7 @@ func makeGetAllEndpoint(s Service) Controller {
 func makeGetEndpoint(s Service) Controller {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GetReq)
-		
+
 		user, err := s.Get(ctx, req.UserID)
 		if err != nil {
 
@@ -94,7 +93,7 @@ func makeGetEndpoint(s Service) Controller {
 
 			return nil, response.InternalServerError(err.Error())
 		}
-		
+
 		return response.OK("success", user), nil
 	}
 }
@@ -120,7 +119,7 @@ func makeUpdateEndpoint(s Service) Controller {
 			if errors.As(err, &ErrNotFound{}) {
 				return nil, response.NotFound(err.Error())
 			}
-			
+
 			return nil, response.InternalServerError(err.Error())
 		}
 		return response.OK("success", nil), nil

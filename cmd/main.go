@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/ncostamagna/go_native_http/internal/user"
 	"github.com/ncostamagna/go_native_http/pkg/bootstrap"
 	"github.com/ncostamagna/go_native_http/pkg/handler"
@@ -13,6 +15,7 @@ import (
 
 func main() {
 
+	_ = godotenv.Load()
 	server := http.NewServeMux()
 
 	db, err := bootstrap.NewDB()
@@ -20,11 +23,11 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
-	
+
 	if err := db.Ping(); err != nil {
 		log.Fatal(err)
 	}
-	
+
 	logger := bootstrap.NewLogger()
 
 	repo := user.NewRepo(db, logger)
@@ -33,7 +36,8 @@ func main() {
 	ctx := context.Background()
 	handler.NewUserHTTPServer(ctx, server, user.MakeEndpoints(service))
 
-	fmt.Println("Server started at port 8080")
+	port := os.Getenv("PORT")
+	fmt.Println("Server started at port ", port)
 
-	log.Fatal(http.ListenAndServe(":8080", server))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), server))
 }

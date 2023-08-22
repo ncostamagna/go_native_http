@@ -12,7 +12,7 @@ type (
 		Create(ctx context.Context, firstName, lastName, email string) (*domain.User, error)
 		GetAll(ctx context.Context) ([]domain.User, error)
 		Get(ctx context.Context, userID uint64) (*domain.User, error)
-		Update(ctx context.Context, userID uint64, firstName, lastName, email *string) error 
+		Update(ctx context.Context, userID uint64, firstName, lastName, email *string) error
 	}
 
 	service struct {
