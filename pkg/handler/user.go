@@ -3,9 +3,11 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/ncostamagna/go_native_http/internal/user"
@@ -30,6 +32,8 @@ func UserServer(ctx context.Context, endpoint user.Endpoints) func(w http.Respon
 		if pathSize == 4 && path[2] != "" {
 			params["userID"] = path[2]
 		}
+
+		params["token"] = r.Header.Get("Authorization")
 
 		tran := transport.New(w, r, context.WithValue(ctx, "params", params))
 
@@ -77,6 +81,10 @@ func UserServer(ctx context.Context, endpoint user.Endpoints) func(w http.Respon
 
 func decodeCreateUser(ctx context.Context, r *http.Request) (interface{}, error) {
 
+	params := ctx.Value("params").(map[string]string)
+	if err := tokenVerify(params["token"]); err != nil {
+		return nil, response.Unauthorized(err.Error())
+	}
 	var req user.CreateReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, response.BadRequest(fmt.Sprintf("invalid request format: '%v'", err.Error()))
@@ -88,6 +96,10 @@ func decodeCreateUser(ctx context.Context, r *http.Request) (interface{}, error)
 func decoGetUser(ctx context.Context, r *http.Request) (interface{}, error) {
 
 	params := ctx.Value("params").(map[string]string)
+
+	if err := tokenVerify(params["token"]); err != nil {
+		return nil, response.Unauthorized(err.Error())
+	}
 
 	userID, err := strconv.ParseUint(params["userID"], 10, 64)
 	if err != nil {
@@ -108,6 +120,10 @@ func decoUpdateUser(ctx context.Context, r *http.Request) (interface{}, error) {
 
 	params := ctx.Value("params").(map[string]string)
 
+	if err := tokenVerify(params["token"]); err != nil {
+		return nil, response.Unauthorized(err.Error())
+	}
+
 	userID, err := strconv.ParseUint(params["userID"], 10, 64)
 	if err != nil {
 		return nil, err
@@ -119,9 +135,22 @@ func decoUpdateUser(ctx context.Context, r *http.Request) (interface{}, error) {
 }
 
 func decodeGetAllUser(ctx context.Context, r *http.Request) (interface{}, error) {
+
+	params := ctx.Value("params").(map[string]string)
+
+	if err := tokenVerify(params["token"]); err != nil {
+		return nil, response.Unauthorized(err.Error())
+	}
+
 	return nil, nil
 }
 
+func tokenVerify(token string) error {
+	if os.Getenv("TOKEN") != token {
+		return errors.New("invalid token")
+	}
+	return nil
+}
 func encodeResponse(ctx context.Context, w http.ResponseWriter, resp interface{}) error {
 
 	r := resp.(response.Response)
